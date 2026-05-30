@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Кто ты на Ветерке?</title>
+<link href="https://fonts.googleapis.com/css2?family=Metamorphous&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --forest: #2d5a1b;
+    --forest-light: #4a8c2a;
+    --field: #8b7d2a;
+    --water: #1a4a6b;
+    --swamp: #3d4a1a;
+    --moss: #6b8c3d;
+    --cream: #f5f0e0;
+    --dark: #1a1f0e;
+    --glow: #a8d85a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Cormorant Garamond', serif;
+    background: var(--dark);
+    color: var(--cream);
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* Animated forest background */
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background:
+      radial-gradient(ellipse at 20% 80%, rgba(45,90,27,0.6) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(26,74,107,0.3) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(61,74,26,0.4) 0%, transparent 70%),
+      linear-gradient(160deg, #0d1407 0%, #1a2a0a 40%, #0e1a1f 100%);
+  }
+
+  .bg-noise {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+  }
+
+  /* Firefly particles */
+  .firefly {
+    position: fixed;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--glow);
+    box-shadow: 0 0 8px 3px rgba(168,216,90,0.6);
+    animation: float var(--dur, 8s) ease-in-out infinite;
+    animation-delay: var(--delay, 0s);
+    opacity: 0;
+    z-index: 1;
+  }
+
+  @keyframes float {
+    0% { transform: translate(0,0); opacity: 0; }
+    20% { opacity: 0.8; }
+    50% { transform: translate(var(--tx, 40px), var(--ty, -60px)); opacity: 0.4; }
+    80% { opacity: 0.7; }
+    100% { transform: translate(var(--tx2, -30px), var(--ty2, 30px)); opacity: 0; }
+  }
+
+  /* App shell */
+  #app {
+    position: relative;
+    z-index: 10;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  /* Screens */
+  .screen {
+    display: none;
+    width: 100%;
+    max-width: 680px;
+    animation: fadeSlide 0.5s ease forwards;
+  }
+
+  .screen.active { display: block; }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── START SCREEN ─── */
+  #start-screen {
+    text-align: center;
+  }
+
+  .title-kto {
+    font-family: 'Metamorphous', cursive;
+    font-size: clamp(11px, 3vw, 15px);
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--glow);
+    opacity: 0.8;
+    margin-bottom: 12px;
+  }
+
+  .title-main {
+    font-family: 'Metamorphous', cursive;
+    font-size: clamp(32px, 9vw, 72px);
+    font-weight: 400;
+    line-height: 0.9;
+    text-transform: uppercase;
+    color: var(--cream);
+    text-shadow: 0 0 60px rgba(168,216,90,0.3);
+    margin-bottom: 8px;
+  }
+
+  .title-sub {
+    font-family: 'Metamorphous', cursive;
+    font-size: clamp(16px, 5vw, 36px);
+    font-weight: 400;
+    color: var(--glow);
+    letter-spacing: 0.1em;
+    margin-bottom: 32px;
+  }
+
+  .start-image {
+    width: 100%;
+    max-width: 440px;
+    height: 260px;
+    margin: 0 auto 32px;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(168,216,90,0.2);
+  }
+
+  .placeholder-img {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(255,255,255,0.03);
+  }
+
+  .placeholder-img svg {
+    opacity: 0.25;
+  }
+
+  .placeholder-img span {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.3;
+  }
+
+  /* actual images */
+  .placeholder-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .btn-start {
+    display: inline-block;
+    font-family: 'Metamorphous', cursive;
+    font-size: 22px;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    color: var(--dark);
+    background: var(--glow);
+    border: none;
+    padding: 20px 64px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 40px;
+  }
+
+  .btn-start:hover {
+    background: #c8f070;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(168,216,90,0.4);
+  }
+
+  /* ─── QUESTION SCREEN ─── */
+  #question-screen {
+    width: 100%;
+    max-width: 680px;
+  }
+
+  .progress-bar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 28px;
+  }
+
+  .progress-dot {
+    flex: 1;
+    height: 3px;
+    background: rgba(168,216,90,0.15);
+    border-radius: 0;
+    transition: background 0.4s;
+  }
+
+  .progress-dot.done {
+    background: var(--glow);
+  }
+
+  .progress-dot.current {
+    background: rgba(168,216,90,0.5);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  .q-counter {
+    font-family: 'Metamorphous', cursive;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--glow);
+    opacity: 0.6;
+    margin-bottom: 16px;
+  }
+
+  .q-image {
+    width: 100%;
+    height: 220px;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    border: 1px solid rgba(168,216,90,0.15);
+    position: relative;
+  }
+
+  .q-text {
+    font-family: 'Metamorphous', cursive;
+    font-size: clamp(16px, 3.5vw, 22px);
+    font-weight: 400;
+    line-height: 1.3;
+    margin-bottom: 24px;
+    color: var(--cream);
+  }
+
+  .answers {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .answer-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(168,216,90,0.15);
+    color: var(--cream);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 19px;
+    font-weight: 400;
+    line-height: 1.5;
+    padding: 16px 20px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 1px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .answer-btn::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--glow);
+    transform: scaleY(0);
+    transition: transform 0.2s;
+  }
+
+  .answer-btn:hover {
+    background: rgba(168,216,90,0.08);
+    border-color: rgba(168,216,90,0.4);
+    transform: translateX(4px);
+  }
+
+  .answer-btn:hover::before {
+    transform: scaleY(1);
+  }
+
+  .answer-btn.selected {
+    background: rgba(168,216,90,0.15);
+    border-color: var(--glow);
+    transform: translateX(4px);
+  }
+
+  .answer-btn.selected::before {
+    transform: scaleY(1);
+  }
+
+  /* ─── RESULT SCREEN ─── */
+  #result-screen {
+    text-align: center;
+  }
+
+  .result-label {
+    font-family: 'Metamorphous', cursive;
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--glow);
+    opacity: 0.7;
+    margin-bottom: 12px;
+  }
+
+  .result-type {
+    font-family: 'Metamorphous', cursive;
+    font-size: clamp(28px, 8vw, 58px);
+    font-weight: 400;
+    text-transform: uppercase;
+    line-height: 0.95;
+    margin-bottom: 16px;
+    color: var(--cream);
+    text-shadow: 0 0 40px rgba(168,216,90,0.5);
+  }
+
+  .result-subtype {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    opacity: 0.5;
+    margin-bottom: 28px;
+  }
+
+  .result-image {
+    width: 100%;
+    max-width: 440px;
+    height: 280px;
+    margin: 0 auto 28px;
+    border-radius: 2px;
+    overflow: hidden;
+    border: 1px solid rgba(168,216,90,0.2);
+  }
+
+  .result-desc {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-style: italic;
+    font-weight: 300;
+    line-height: 1.7;
+    color: var(--cream);
+    opacity: 0.9;
+    max-width: 480px;
+    margin: 0 auto 36px;
+    padding: 0 12px;
+  }
+
+  .btn-restart {
+    display: inline-block;
+    font-family: 'Metamorphous', cursive;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.15em;
+    color: var(--glow);
+    background: transparent;
+    border: 1px solid rgba(168,216,90,0.4);
+    padding: 14px 36px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 40px;
+  }
+
+  .btn-restart:hover {
+    background: rgba(168,216,90,0.1);
+    border-color: var(--glow);
+  }
+
+  /* Score badges */
+  .score-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .score-badge {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    opacity: 0.6;
+  }
+
+  .score-badge.winner {
+    background: rgba(168,216,90,0.15);
+    border-color: rgba(168,216,90,0.4);
+    color: var(--glow);
+    opacity: 1;
+  }
+
+  /* ─── Responsive mobile ─── */
+  @media (max-width: 480px) {
+    #app { padding: 16px; justify-content: flex-start; padding-top: 32px; }
+    .answer-btn { font-size: 17px; padding: 14px 16px; }
+    .q-image { height: 180px; }
+    .result-image { height: 220px; }
+    .start-image { height: 200px; }
+    .btn-start { padding: 18px 48px; font-size: 20px; width: 100%; }
+    .btn-restart { width: 100%; }
+    .result-desc { font-size: 21px; }
+    .q-text { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-layer"></div>
+<div class="bg-noise"></div>
+
+<!-- Fireflies -->
+<div class="firefly" style="left:10%;top:20%;--dur:9s;--delay:0s;--tx:60px;--ty:-80px;--tx2:-40px;--ty2:50px;"></div>
+<div class="firefly" style="left:80%;top:70%;--dur:11s;--delay:2s;--tx:-80px;--ty:-50px;--tx2:30px;--ty2:70px;"></div>
+<div class="firefly" style="left:55%;top:10%;--dur:7s;--delay:4s;--tx:40px;--ty:100px;--tx2:-60px;--ty2:-30px;"></div>
+<div class="firefly" style="left:25%;top:85%;--dur:13s;--delay:1s;--tx:-30px;--ty:-120px;--tx2:80px;--ty2:20px;"></div>
+<div class="firefly" style="left:90%;top:40%;--dur:10s;--delay:3s;--tx:-90px;--ty:40px;--tx2:20px;--ty2:-60px;"></div>
+<div class="firefly" style="left:5%;top:60%;--dur:8s;--delay:5s;--tx:70px;--ty:-40px;--tx2:-20px;--ty2:80px;"></div>
+<div class="firefly" style="left:65%;top:90%;--dur:12s;--delay:0.5s;--tx:-50px;--ty:-100px;--tx2:40px;--ty2:30px;"></div>
+
+<div id="app">
+
+  <!-- START SCREEN -->
+  <div id="start-screen" class="screen active">
+    <div class="title-main" style="font-size:clamp(22px,6vw,52px);line-height:1.15;margin-bottom:32px;">Какая ты нечисть<br>на Ветерке?</div>
+
+    <div class="start-image">
+      <div class="placeholder-img" id="cover-holder">
+        <img src="cover.jpg" alt="cover" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.removeProperty('display')">
+        <div style="display:none;flex-direction:column;align-items:center;gap:8px;width:100%;height:100%;justify-content:center;">
+          <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="6" y="6" width="36" height="36" rx="2" stroke="white" stroke-width="1.5"/>
+            <circle cx="18" cy="18" r="4" stroke="white" stroke-width="1.5"/>
+            <path d="M6 32l10-10 8 8 6-6 12 12" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+          <span>cover</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-start" onclick="startQuiz()">Начать</button>
+  </div>
+
+  <!-- QUESTION SCREEN -->
+  <div id="question-screen" class="screen">
+    <div class="progress-bar" id="progress-bar"></div>
+    <div class="q-counter" id="q-counter"></div>
+    <div class="q-image">
+      <div class="placeholder-img" id="q-image-holder">
+        <!-- image injected by JS -->
+      </div>
+    </div>
+    <div class="q-text" id="q-text"></div>
+    <div class="answers" id="answers"></div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div id="result-screen" class="screen">
+    <div class="result-label">Твой результат</div>
+    <div class="result-type" id="result-type"></div>
+    <div class="result-subtype" id="result-subtype"></div>
+    <div class="result-image">
+      <div class="placeholder-img" id="result-image-holder"></div>
+    </div>
+    <div class="result-desc" id="result-desc"></div>
+    <button class="btn-restart" onclick="restart()">Пройти заново</button>
+  </div>
+
+</div>
+
+<script>
+  /* ──────────────────────────────────────────
+     DATA
+  ─────────────────────────────────────────── */
+  const TYPES = {
+    лес: {
+      name: 'Лесной дух',
+      label: 'ЛЕС',
+      sub: 'лес',
+      desc: 'ты издаешь дремучие звуки и выпрыгиваешь из-за деревьев',
+      img: 'result1.jpg',
+      imgFile: 'result1',
+      imgAlt: 'Лесной дух'
+    },
+    поле: {
+      name: 'Волколак',
+      label: 'ПОЛЕ',
+      sub: 'поле',
+      desc: 'ты бегаешь по поляне и воешь на луну',
+      img: 'result2.jpg',
+      imgFile: 'result2',
+      imgAlt: 'Волколак'
+    },
+    болото: {
+      name: 'Болотный огонёк',
+      label: 'БОЛОТО',
+      sub: 'болото',
+      desc: 'ты скользишь между кочками и радуешь доверчивых путников',
+      img: 'result3.jpg',
+      imgFile: 'result3',
+      imgAlt: 'Болотный огонёк'
+    },
+    вода: {
+      name: 'Водяная хтонь',
+      label: 'ВОДА',
+      sub: 'вода',
+      desc: 'ты поешь странные песни и ешь всякое',
+      img: 'result4.jpg',
+      imgFile: 'result4',
+      imgAlt: 'Водяная хтонь'
+    }
+  };
+
+  const QUESTIONS = [
+    {
+      text: 'Где ты будешь ставить палатку?',
+      img: 'question1.jpg',
+      answers: [
+        { text: 'Между двумя танцполами, чтобы засыпать под басы', type: 'вода' },
+        { text: 'В болоте, чтобы спать под трели комаров', type: 'болото' },
+        { text: 'В поле, чтобы просыпаться с рассветом в парилке', type: 'поле' },
+        { text: 'В лесу, чтобы меня кусал волчок за бочок', type: 'лес' },
+      ]
+    },
+    {
+      text: 'Какие у тебя кэмпмейты?',
+      img: 'question2.jpg',
+      answers: [
+        { text: 'Спокойные котики, которые всё понимают и ничего не делают', type: 'болото' },
+        { text: 'Бешеные весёлые, я не понимаю что происходит, помогите', type: 'поле' },
+        { text: 'Деловые, отпустите меня пожалуйста я больше ни буду', type: 'лес' },
+        { text: 'Вдохновлённые, показывают рыбе Сызрань', type: 'вода' },
+      ]
+    },
+    {
+      text: 'Друг подмигивает и предлагает что-то съесть',
+      img: 'question3.jpg',
+      answers: [
+        { text: 'Я съем', type: 'поле' },
+        { text: 'Я спрошу что это, а потом съем', type: 'вода' },
+        { text: 'Я спрошу что это, отнесу в Зендо, а потом съем', type: 'лес' },
+        { text: 'Я вообще такое не ем, это для весёлых мясных человеков из плоти', type: 'болото' },
+      ]
+    },
+    {
+      text: 'Что тебе больше всего нравится?',
+      img: 'question4.jpg',
+      answers: [
+        { text: 'Вращать глазами асинхронно', type: 'вода' },
+        { text: 'Смеяться зубами как борщевик', type: 'лес' },
+        { text: 'Исподтишка кусать в кочан', type: 'поле' },
+        { text: 'Вдыхать-выдыхать дым разным цветом', type: 'болото' },
+      ]
+    },
+    {
+      text: 'Какой совет ты дашь другу на Ветерке?',
+      img: 'question5.jpg',
+      answers: [
+        { text: 'Съешь яблоко из сада ночью, тогда кровяной насос будет ровнее биться', type: 'лес' },
+        { text: 'Дыши, иначе умрёшь', type: 'вода' },
+        { text: 'Оближи глазницу черепа из Тэмпла, тогда увидишь дух мэна', type: 'поле' },
+        { text: 'Если в полночь ты слышишь вызов из штаба, а у тебя нет рации — это не штаб', type: 'болото' },
+      ]
+    },
+    {
+      text: 'Какое самое запретное знание ты ведаешь про Ветерок?',
+      img: 'question6.jpg',
+      answers: [
+        { text: 'Если у человека две тени, то либо так свет поставили, либо будет засос на всю шею', type: 'болото' },
+        { text: 'Женщина без лица и с рогами в два часа ночи покажет секретный кэмп', type: 'вода' },
+        { text: 'Если цокать и шмыгать, но нечасто, то можно провалиться в карман времени', type: 'поле' },
+        { text: 'Когда начнут водить хоровод вокруг пилона нагими и намазанными краской, смотри не отрываясь, иначе растаешь', type: 'лес' },
+      ]
+    },
+    {
+      text: 'Чего ты ждёшь от Ветерка?',
+      img: 'question7.jpg',
+      answers: [
+        { text: 'Что все будут носить человеческую кожу и смотреть на луну', type: 'вода' },
+        { text: 'Что пища будет обильной, а зрелища чрезмерными', type: 'поле' },
+        { text: 'Что огоньки в темноте приведут тебя к бассейну с грибами', type: 'болото' },
+        { text: 'Что волосы на руках будут шевелиться в такт голосам в голове', type: 'лес' },
+      ]
+    },
+  ];
+
+  /* ──────────────────────────────────────────
+     STATE
+  ─────────────────────────────────────────── */
+  let currentQ = 0;
+  let scores = { лес: 0, поле: 0, болото: 0, вода: 0 };
+  let selectedAnswer = null;
+  let answerTimeout = null;
+
+  /* ──────────────────────────────────────────
+     HELPERS
+  ─────────────────────────────────────────── */
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function makePlaceholder(labelText) {
+    return `
+      <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="6" y="6" width="36" height="36" rx="2" stroke="white" stroke-width="1.5"/>
+        <circle cx="18" cy="18" r="4" stroke="white" stroke-width="1.5"/>
+        <path d="M6 32l10-10 8 8 6-6 12 12" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+      <span>${labelText}</span>
+    `;
+  }
+
+  function makeImageContent(imgSrc, altText, fileLabel) {
+    return `
+      <img src="${imgSrc}" alt="${altText}" style="width:100%;height:100%;object-fit:cover;display:block;"
+           onerror="this.style.display='none';this.nextElementSibling.style.removeProperty('display')">
+      <div class="placeholder-img" style="display:none">${makePlaceholder(fileLabel)}</div>
+    `;
+  }
+
+  /* ──────────────────────────────────────────
+     QUIZ FLOW
+  ─────────────────────────────────────────── */
+  function startQuiz() {
+    currentQ = 0;
+    scores = { лес: 0, поле: 0, болото: 0, вода: 0 };
+    showScreen('question-screen');
+    renderQuestion();
+  }
+
+  function renderQuestion() {
+    selectedAnswer = null;
+    const q = QUESTIONS[currentQ];
+
+    // Progress bar
+    const bar = document.getElementById('progress-bar');
+    bar.innerHTML = '';
+    QUESTIONS.forEach((_, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'progress-dot' +
+        (i < currentQ ? ' done' : i === currentQ ? ' current' : '');
+      bar.appendChild(dot);
+    });
+
+    document.getElementById('q-counter').textContent =
+      `Вопрос ${currentQ + 1} из ${QUESTIONS.length}`;
+
+    document.getElementById('q-image-holder').innerHTML =
+      makeImageContent(q.img, `question${currentQ + 1}`, `question${currentQ + 1}`);
+
+    document.getElementById('q-text').textContent = q.text;
+
+    const answersEl = document.getElementById('answers');
+    answersEl.innerHTML = '';
+    q.answers.forEach((a, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'answer-btn';
+      btn.textContent = a.text;
+      btn.onclick = () => selectAnswer(i, a.type, btn);
+      answersEl.appendChild(btn);
+    });
+  }
+
+  function selectAnswer(idx, type, btn) {
+    if (selectedAnswer !== null) return; // already answered
+    selectedAnswer = idx;
+
+    document.querySelectorAll('.answer-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    scores[type]++;
+
+    clearTimeout(answerTimeout);
+    answerTimeout = setTimeout(() => {
+      currentQ++;
+      if (currentQ < QUESTIONS.length) {
+        renderQuestion();
+      } else {
+        showResult();
+      }
+    }, 600);
+  }
+
+  function showResult() {
+    // Find winner
+    const winner = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+    const info = TYPES[winner];
+
+    document.getElementById('result-type').textContent = info.name.toUpperCase();
+    document.getElementById('result-subtype').textContent = '';
+    document.getElementById('result-desc').textContent = info.desc;
+
+    document.getElementById('result-image-holder').innerHTML =
+      makeImageContent(info.img, info.imgAlt, info.imgFile);
+
+    showScreen('result-screen');
+  }
+
+  function restart() {
+    showScreen('start-screen');
+  }
+</script>
+</body>
+</html>
