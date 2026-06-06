@@ -137,7 +137,6 @@
   .start-image {
     width: 100%;
     max-width: 440px;
-    height: 260px;
     margin: 0 auto 32px;
     border-radius: 4px;
     overflow: hidden;
@@ -241,7 +240,6 @@
 
   .q-image {
     width: 100%;
-    height: 220px;
     border-radius: 2px;
     overflow: hidden;
     margin-bottom: 24px;
@@ -349,7 +347,6 @@
   .result-image {
     width: 100%;
     max-width: 440px;
-    height: 280px;
     margin: 0 auto 28px;
     border-radius: 2px;
     overflow: hidden;
@@ -421,9 +418,9 @@
     #app { padding: 16px; justify-content: flex-start; padding-top: 32px; }
     * { font-style: normal !important; }
     .answer-btn { font-size: 17px; padding: 14px 16px; }
-    .q-image { height: 180px; }
-    .result-image { height: 220px; }
-    .start-image { height: 200px; }
+    .q-image { height: auto; }
+    .result-image { height: auto; }
+    .start-image { height: auto; }
     .btn-start { padding: 18px 48px; font-size: 20px; width: 100%; }
     .btn-restart { width: 100%; }
     .result-desc { font-size: 21px; }
@@ -454,7 +451,7 @@
 
     <div class="start-image">
       <div class="placeholder-img" id="cover-holder">
-        <img src="cover.jpg" alt="cover" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.removeProperty('display')">
+        <img src="cover.jpg" alt="cover" style="width:100%;height:auto;object-fit:contain;display:block;" onerror="this.style.display='none';this.nextElementSibling.style.removeProperty('display')">
         <div style="display:none;flex-direction:column;align-items:center;gap:8px;width:100%;height:100%;justify-content:center;">
           <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="6" y="6" width="36" height="36" rx="2" stroke="white" stroke-width="1.5"/>
@@ -641,7 +638,7 @@
 
   function makeImageContent(imgSrc, altText, fileLabel) {
     return `
-      <img src="${imgSrc}" alt="${altText}" style="width:100%;height:100%;object-fit:cover;display:block;"
+      <img src="${imgSrc}" alt="${altText}" style="width:100%;height:auto;object-fit:contain;display:block;"
            onerror="this.style.display='none';this.nextElementSibling.style.removeProperty('display')">
       <div class="placeholder-img" style="display:none">${makePlaceholder(fileLabel)}</div>
     `;
